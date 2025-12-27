@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Card, CardContent } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
@@ -34,7 +34,8 @@ export default function CollectFees() {
 
   // ---------------- STUDENT SELECT ----------------
   const handleStudentSelect = (stuId) => {
-    const student = students.find((s) => s.stuId === stuId);
+    stuId = String(stuId); // ensure string
+    const student = students.find((s) => String(s.stuId) === stuId);
     if (!student) return;
 
     const courseObj = courses.find((c) => c.name === student.course);
@@ -43,7 +44,7 @@ export default function CollectFees() {
     const totalFees = Number(courseObj.fees);
 
     const alreadyPaid = paymentHistory
-      .filter((p) => p.stuId === stuId)
+      .filter((p) => String(p.stuId) === stuId)
       .reduce((sum, p) => sum + Number(p.amountPaid || 0), 0);
 
     const remaining = totalFees - alreadyPaid;
@@ -129,6 +130,7 @@ export default function CollectFees() {
     setRemainingFees(0);
   };
 
+  // ---------------- RENDER ----------------
   return (
     <>
       <Toaster />
@@ -142,26 +144,28 @@ export default function CollectFees() {
             <form onSubmit={handleSubmit} className="space-y-6">
               <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                 {/* Student Id */}
-                <div className="flex flex-col">
-                  <Label className="mb-2 text-gray-700 font-medium">
-                    Student Id
-                  </Label>
-                  <Select
-                    value={formData.stuId}
-                    onValueChange={handleStudentSelect}
-                  >
-                    <SelectTrigger className="bg-white mt-2 w-full border border-gray-300 rounded-lg p-3 focus:ring-2 focus:ring-indigo-400">
-                      <SelectValue placeholder="Select Student Id" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      {students.map((s) => (
-                        <SelectItem key={s._id} value={s.stuId}>
-                          {s.stuId}
-                        </SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
-                </div>
+                {students.length > 0 && (
+                  <div className="flex flex-col">
+                    <Label className="mb-2 text-gray-700 font-medium">
+                      Student Id
+                    </Label>
+                    <Select
+                      value={formData.stuId}
+                      onValueChange={handleStudentSelect}
+                    >
+                      <SelectTrigger className="bg-white mt-2 w-full border border-gray-300 rounded-lg p-3 focus:ring-2 focus:ring-indigo-400">
+                        <SelectValue placeholder="Select Student Id" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        {students.map((s) => (
+                          <SelectItem key={s._id} value={String(s.stuId)}>
+                            {s.stuId}
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                  </div>
+                )}
 
                 {/* Course (auto, readonly) */}
                 <div className="flex flex-col">
