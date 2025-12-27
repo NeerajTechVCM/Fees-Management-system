@@ -34,30 +34,33 @@ export default function CollectFees() {
 
   // ---------------- STUDENT SELECT ----------------
   const handleStudentSelect = (stuId) => {
-    stuId = String(stuId); // ensure string
-    const student = students.find((s) => String(s.stuId) === stuId);
-    if (!student) return;
+    try {
+      const student = students.find((s) => s.stuId === stuId);
+      if (!student) throw new Error("Student not found");
 
-    const courseObj = courses.find((c) => c.name === student.course);
-    if (!courseObj) return;
+      const courseObj = courses.find((c) => c.name === student.course);
+      if (!courseObj) throw new Error("Course not found");
 
-    const totalFees = Number(courseObj.fees);
+      const totalFees = Number(courseObj.fees);
 
-    const alreadyPaid = paymentHistory
-      .filter((p) => String(p.stuId) === stuId)
-      .reduce((sum, p) => sum + Number(p.amountPaid || 0), 0);
+      const alreadyPaid = paymentHistory
+        .filter((p) => p.stuId === stuId)
+        .reduce((sum, p) => sum + Number(p.amountPaid || 0), 0);
 
-    const remaining = totalFees - alreadyPaid;
+      const remaining = totalFees - alreadyPaid;
 
-    setRemainingFees(remaining > 0 ? remaining : 0);
+      setRemainingFees(remaining > 0 ? remaining : 0);
 
-    setFormData((prev) => ({
-      ...prev,
-      stuId,
-      course: student.course,
-      totalFees,
-      amountPaid: "",
-    }));
+      setFormData((prev) => ({
+        ...prev,
+        stuId,
+        course: student.course,
+        totalFees,
+        amountPaid: "",
+      }));
+    } catch (err) {
+      alert(err.message); // phone-friendly error
+    }
   };
 
   // ---------------- INPUT CHANGE ----------------
@@ -66,7 +69,6 @@ export default function CollectFees() {
 
     if (name === "amountPaid") {
       const num = Number(value);
-
       if (isNaN(num)) return;
 
       if (num < 0) {
@@ -89,45 +91,47 @@ export default function CollectFees() {
   // ---------------- SUBMIT ----------------
   const handleSubmit = async (e) => {
     e.preventDefault();
+    try {
+      const paid = Number(formData.amountPaid);
+      if (!paid || paid <= 0) {
+        toast.error("Enter valid amount");
+        return;
+      }
 
-    const paid = Number(formData.amountPaid);
+      if (paid > remainingFees) {
+        toast.error(`Maximum payable amount is ₹${remainingFees}`);
+        return;
+      }
 
-    if (!paid || paid <= 0) {
-      toast.error("Enter valid amount");
-      return;
+      const result = await fetch("/collectFees", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        credentials: "include",
+        body: JSON.stringify(formData),
+      });
+
+      const data = await result.json();
+
+      if (data.success) {
+        toast.success(data.message);
+        fetchPayments(); // refresh payment context
+      } else {
+        toast.error(data.message);
+      }
+
+      // Reset form
+      setFormData({
+        stuId: "",
+        course: "",
+        totalFees: "",
+        amountPaid: "",
+        paymentMethod: "",
+        remarks: "",
+      });
+      setRemainingFees(0);
+    } catch (err) {
+      alert("Error: " + err.message);
     }
-
-    if (paid > remainingFees) {
-      toast.error(`Maximum payable amount is ₹${remainingFees}`);
-      return;
-    }
-
-    const result = await fetch("/collectFees", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      credentials: "include",
-      body: JSON.stringify(formData),
-    });
-
-    const data = await result.json();
-
-    if (data.success) {
-      toast.success(data.message);
-      fetchPayments(); // refresh payment context
-    } else {
-      toast.error(data.message);
-    }
-
-    setFormData({
-      stuId: "",
-      course: "",
-      totalFees: "",
-      amountPaid: "",
-      paymentMethod: "",
-      remarks: "",
-    });
-
-    setRemainingFees(0);
   };
 
   // ---------------- RENDER ----------------
@@ -158,7 +162,7 @@ export default function CollectFees() {
                       </SelectTrigger>
                       <SelectContent>
                         {students.map((s) => (
-                          <SelectItem key={s._id} value={String(s.stuId)}>
+                          <SelectItem key={s._id} value={s.stuId}>
                             {s.stuId}
                           </SelectItem>
                         ))}
