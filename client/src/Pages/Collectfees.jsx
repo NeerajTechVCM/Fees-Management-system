@@ -19,7 +19,7 @@ import toast, { Toaster } from "react-hot-toast";
 export default function CollectFees() {
   const { students } = useStudents();
   const { courses } = useCourses();
-  const { payments } = usePayments();
+  const { paymentHistory, fetchPayments } = usePayments();
 
   const [remainingFees, setRemainingFees] = useState(0);
 
@@ -32,84 +32,90 @@ export default function CollectFees() {
     remarks: "",
   });
 
-  const getTotalPaidByStudent = (stuId) => {
-    if (!stuId) return 0;
-    return payments
-      .filter((p) => String(p.stuId) === String(stuId))
-      .reduce((sum, p) => sum + Number(p.amountPaid || 0), 0);
-  };
+  // ---------------- STUDENT SELECT ----------------
+  const handleStudentSelect = (stuId) => {
+    const student = students.find((s) => s.stuId === stuId);
+    if (!student) return;
 
-  const handleStudentSelect = (value) => {
-    const stuId = String(value);
-
-    const student = students.find(
-      (s) => String(s.stuId) === stuId
-    );
-
-    // reset if invalid
-    if (!student) {
-      setFormData({
-        stuId: "",
-        course: "",
-        totalFees: "",
-        amountPaid: "",
-        paymentMethod: "",
-        remarks: "",
-      });
-      setRemainingFees(0);
-      return;
-    }
-
-    const courseObj = courses.find(
-      (c) => c.name === student.course
-    );
-
+    const courseObj = courses.find((c) => c.name === student.course);
     if (!courseObj) return;
 
     const totalFees = Number(courseObj.fees);
-    const alreadyPaid = getTotalPaidByStudent(stuId);
+
+    const alreadyPaid = paymentHistory
+      .filter((p) => p.stuId === stuId)
+      .reduce((sum, p) => sum + Number(p.amountPaid || 0), 0);
+
     const remaining = totalFees - alreadyPaid;
+
+    setRemainingFees(remaining > 0 ? remaining : 0);
 
     setFormData((prev) => ({
       ...prev,
       stuId,
-      course: student.course,     // auto select
-      totalFees,                  // auto set
+      course: student.course,
+      totalFees,
       amountPaid: "",
     }));
-
-    setRemainingFees(remaining > 0 ? remaining : 0);
   };
 
+  // ---------------- INPUT CHANGE ----------------
+  const handleChange = (e) => {
+    const { name, value } = e.target;
+
+    if (name === "amountPaid") {
+      const num = Number(value);
+
+      if (isNaN(num)) return;
+
+      if (num < 0) {
+        toast.error("Amount cannot be negative");
+        return;
+      }
+
+      if (num > remainingFees) {
+        toast.error(`Maximum payable amount is ₹${remainingFees}`);
+        return;
+      }
+    }
+
+    setFormData((prev) => ({
+      ...prev,
+      [name]: value,
+    }));
+  };
+
+  // ---------------- SUBMIT ----------------
   const handleSubmit = async (e) => {
     e.preventDefault();
 
-    if (!formData.stuId) {
-      toast.error("Please select student");
+    const paid = Number(formData.amountPaid);
+
+    if (!paid || paid <= 0) {
+      toast.error("Enter valid amount");
       return;
     }
 
-    if (!formData.amountPaid) {
-      toast.error("Please enter amount");
+    if (paid > remainingFees) {
+      toast.error(`Maximum payable amount is ₹${remainingFees}`);
       return;
     }
 
-    if (Number(formData.amountPaid) > remainingFees) {
-      toast.error(`Maximum payable ₹${remainingFees}`);
-      return;
-    }
-
-    const res = await fetch("/collectFees", {
+    const result = await fetch("/collectFees", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       credentials: "include",
       body: JSON.stringify(formData),
     });
 
-    const data = await res.json();
-    data.success
-      ? toast.success(data.message)
-      : toast.error(data.message);
+    const data = await result.json();
+
+    if (data.success) {
+      toast.success(data.message);
+      fetchPayments(); // refresh payment context
+    } else {
+      toast.error(data.message);
+    }
 
     setFormData({
       stuId: "",
@@ -119,6 +125,7 @@ export default function CollectFees() {
       paymentMethod: "",
       remarks: "",
     });
+
     setRemainingFees(0);
   };
 
@@ -134,22 +141,21 @@ export default function CollectFees() {
 
             <form onSubmit={handleSubmit} className="space-y-6">
               <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                {/* Student ID */}
-                <div>
-                  <Label>Student Id</Label>
+                {/* Student Id */}
+                <div className="flex flex-col">
+                  <Label className="mb-2 text-gray-700 font-medium">
+                    Student Id
+                  </Label>
                   <Select
                     value={formData.stuId}
                     onValueChange={handleStudentSelect}
                   >
-                    <SelectTrigger className="mt-2">
+                    <SelectTrigger className="bg-white mt-2 w-full border border-gray-300 rounded-lg p-3 focus:ring-2 focus:ring-indigo-400">
                       <SelectValue placeholder="Select Student Id" />
                     </SelectTrigger>
                     <SelectContent>
                       {students.map((s) => (
-                        <SelectItem
-                          key={s._id}
-                          value={String(s.stuId)}
-                        >
+                        <SelectItem key={s._id} value={s.stuId}>
                           {s.stuId}
                         </SelectItem>
                       ))}
@@ -157,97 +163,91 @@ export default function CollectFees() {
                   </Select>
                 </div>
 
-                {/* Course (AUTO, HIDDEN UNTIL ID) */}
-                <div>
-                  <Label>Course</Label>
-                  <Select
+                {/* Course (auto, readonly) */}
+                <div className="flex flex-col">
+                  <Label className="mb-2 text-gray-700 font-medium">
+                    Course
+                  </Label>
+                  <Input
                     value={formData.course}
-                    disabled
-                  >
-                    <SelectTrigger className="mt-2 opacity-80 cursor-not-allowed">
-                      <SelectValue placeholder="Auto selected" />
-                    </SelectTrigger>
-                  </Select>
+                    readOnly
+                    className="bg-white border border-gray-300 rounded-lg p-3 focus:ring-2 focus:ring-indigo-400 mt-2"
+                  />
                 </div>
 
-                {/* Total Fees (AUTO, HIDDEN UNTIL ID) */}
-                <div>
-                  <Label>Total Fee</Label>
+                {/* Total Fee */}
+                <div className="flex flex-col">
+                  <Label className="mb-2 text-gray-700 font-medium">
+                    Total Fee
+                  </Label>
                   <Input
-                    readOnly
                     value={formData.totalFees}
-                    placeholder="Auto calculated"
-                    className="mt-2"
+                    readOnly
+                    className="bg-white border border-gray-300 rounded-lg p-3 focus:ring-2 focus:ring-indigo-400 mt-2"
                   />
                 </div>
 
                 {/* Amount Paid */}
-                <div>
-                  <Label>Amount Paid</Label>
+                <div className="flex flex-col">
+                  <Label className="mb-2 text-gray-700 font-medium">
+                    Amount Paid
+                  </Label>
                   <Input
+                    name="amountPaid"
                     type="number"
-                    value={formData.amountPaid}
-                    disabled={!formData.stuId || remainingFees === 0}
                     placeholder={
                       formData.stuId
                         ? `Max ₹${remainingFees}`
                         : "Select student first"
                     }
-                    onChange={(e) => {
-                      const val = Number(e.target.value);
-                      if (val > remainingFees) {
-                        toast.error(`Max ₹${remainingFees}`);
-                        return;
-                      }
-                      setFormData((p) => ({
-                        ...p,
-                        amountPaid: e.target.value,
-                      }));
-                    }}
-                    className="mt-2"
+                    value={formData.amountPaid}
+                    onChange={handleChange}
+                    className="bg-white border border-gray-300 rounded-lg p-3 focus:ring-2 focus:ring-indigo-400 mt-2"
                   />
                 </div>
               </div>
 
               {/* Payment Method */}
-              <div>
-                <Label>Payment Method</Label>
+              <div className="flex flex-col">
+                <Label className="mb-2 text-gray-700 font-medium">
+                  Payment Method
+                </Label>
                 <Select
                   value={formData.paymentMethod}
                   onValueChange={(v) =>
-                    setFormData((p) => ({
-                      ...p,
-                      paymentMethod: v,
-                    }))
+                    setFormData((p) => ({ ...p, paymentMethod: v }))
                   }
                 >
-                  <SelectTrigger className="mt-2">
+                  <SelectTrigger className="bg-white mt-2 w-full border border-gray-300 rounded-lg p-3 focus:ring-2 focus:ring-indigo-400">
                     <SelectValue placeholder="Select Payment Method" />
                   </SelectTrigger>
                   <SelectContent>
                     <SelectItem value="cash">Cash</SelectItem>
                     <SelectItem value="card">Card</SelectItem>
-                    <SelectItem value="bank">Bank</SelectItem>
+                    <SelectItem value="bank">Bank Transfer</SelectItem>
                   </SelectContent>
                 </Select>
               </div>
 
               {/* Remarks */}
-              <div>
-                <Label>Remarks</Label>
+              <div className="flex flex-col">
+                <Label className="mb-2 text-gray-700 font-medium">
+                  Remarks
+                </Label>
                 <Textarea
+                  name="remarks"
+                  placeholder="Enter remarks (optional)"
                   value={formData.remarks}
-                  onChange={(e) =>
-                    setFormData((p) => ({
-                      ...p,
-                      remarks: e.target.value,
-                    }))
-                  }
-                  className="mt-2"
+                  onChange={handleChange}
+                  className="bg-white border border-gray-300 rounded-lg p-3 focus:ring-2 focus:ring-indigo-400 mt-2"
                 />
               </div>
 
-              <Button className="w-full">
+              {/* Submit Button */}
+              <Button
+                type="submit"
+                className="w-full bg-indigo-600 text-white font-semibold py-3 rounded-lg hover:bg-indigo-700 transition duration-300 shadow-md hover:shadow-lg"
+              >
                 Submit Payment
               </Button>
             </form>
