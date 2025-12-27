@@ -38,7 +38,7 @@ export default function CollectFees() {
       const student = students.find((s) => s.stuId === stuId);
       if (!student) throw new Error("Student not found");
 
-      const courseObj = courses.find((c) => c.name === student.course);
+      const courseObj = courses.find((c) => c.name === student.courseName);
       if (!courseObj) throw new Error("Course not found");
 
       const totalFees = Number(courseObj.fees);
@@ -54,7 +54,7 @@ export default function CollectFees() {
       setFormData((prev) => ({
         ...prev,
         stuId,
-        course: student.course,
+        course: student.courseName,
         totalFees,
         amountPaid: "",
       }));
