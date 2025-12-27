@@ -10,8 +10,8 @@ import { useCourses } from "@/context/CourseContext";
 import toast, { Toaster } from "react-hot-toast";
 
 export default function CollectFees() {
-  const [students, setStudents] = useStudents();
-  const [courses, setCourses] = useCourses();
+  const {students, setStudents} = useStudents();
+  const {courses, setCourses} = useCourses();
   const [formData, setFormData] = useState({
 
     stuId: "",
