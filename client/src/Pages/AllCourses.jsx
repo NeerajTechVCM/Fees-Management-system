@@ -6,7 +6,7 @@ import { Loading } from '@/components/Loading';
 import { useCourses } from '@/context/CourseContext';
 
 export default function AllCourses() {
-  const [courses, setCourses,loading] = useCourses();
+  const {courses, setCourses,loading} = useCourses();
 
 
 
