@@ -8,7 +8,7 @@ export default function CourseProvider({children}) {
     const [courses,setCourses]=useState([]);
     useEffect(() => {
       const fetchCourses = async () => {
-        const result = await fetch("http://localhost:8080/getAllCourses", {
+        const result = await fetch("/getAllCourses", {
           method: "GET",
           headers: {
             "Content-Type": 'application/json',

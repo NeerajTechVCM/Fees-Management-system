@@ -65,7 +65,7 @@ const navigate= useNavigate();
     e.preventDefault();
 
 
-    const result = await fetch(`http://localhost:8080/editStudent/${selectStudents?._id}`, {
+    const result = await fetch(`/editStudent/${selectStudents?._id}`, {
       method: "POST",
       headers: {
         "Content-Type": 'application/json',

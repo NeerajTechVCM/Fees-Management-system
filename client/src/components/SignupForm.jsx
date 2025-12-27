@@ -68,7 +68,7 @@ setImageLoader(true)
     e.preventDefault();
 setLoading(true)
 
-    const result = await fetch("http://localhost:8080/register", {
+    const result = await fetch("/register", {
       method: "POST",
       headers: {
         "Content-Type": 'application/json'

@@ -9,7 +9,7 @@ export default function StudentProvider({children}) {
  
    useEffect(() => {
      const fetchStudents = async () => {
-       const result = await fetch("http://localhost:8080/getAllStudents", {
+       const result = await fetch("/getAllStudents", {
          method: "GET",
          headers: {
            "Content-Type": 'application/json',

@@ -36,7 +36,7 @@ export function LoginForm({ className, ...props }) {
     e.preventDefault();
 setLoading(true)
 
-    const result = await fetch("http://localhost:8080/login", {
+    const result = await fetch("/login", {
       method: "POST",
       headers: {
         "Content-Type": 'application/json'

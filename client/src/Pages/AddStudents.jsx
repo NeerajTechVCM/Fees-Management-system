@@ -53,7 +53,7 @@ export default function AddStudent() {
     e.preventDefault();
  
 
-    const result = await fetch('http://localhost:8080/addStudent', {
+    const result = await fetch('/addStudent', {
       method: "POST",
       headers: {
         "Content-Type": 'application/json',

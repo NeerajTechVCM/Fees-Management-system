@@ -56,7 +56,7 @@ setImageLoader(true)
   }
   const handleSubmit = async (e) => {
     e.preventDefault();
-    const result = await fetch("http://localhost:8080/addCourse", {
+    const result = await fetch("/addCourse", {
       method: "POST",
       headers: {
         "Content-Type": 'application/json'

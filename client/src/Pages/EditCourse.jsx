@@ -69,7 +69,7 @@ setImageLoader(true)
   }, [id, courses]);
   const handleSubmit = async (e) => {
     e.preventDefault();
-    const result = await fetch(`http://localhost:8080/editCourse/${selectCourse?._id}`, {
+    const result = await fetch(`/editCourse/${selectCourse?._id}`, {
       method: "POST",
       headers: {
         "Content-Type": 'application/json'

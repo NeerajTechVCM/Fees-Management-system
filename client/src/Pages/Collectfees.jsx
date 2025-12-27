@@ -70,7 +70,7 @@ export default function CollectFees() {
     e.preventDefault();
 
 
-    const result = await fetch("http://localhost:8080/collectFees", {
+    const result = await fetch("/collectFees", {
       method: "POST",
       headers: {
         "Content-Type": 'application/json'

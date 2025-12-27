@@ -8,7 +8,7 @@ const [paymentHistory, setPaymentHistory] = useState([]);
 
   useEffect(() => {
     const fetchFees = async () => {
-      const result = await fetch("http://localhost:8080/feesHistory", {
+      const result = await fetch("/feesHistory", {
         method: "GET",
         headers: {
           "Content-Type": 'application/json',
