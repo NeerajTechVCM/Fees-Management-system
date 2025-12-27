@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from "react";
+import React from "react";
 import { User, BookOpen, Users, IndianRupeeIcon, IndianRupee } from "lucide-react";
 import { useCourses } from "@/context/CourseContext";
 import { useStudents } from "@/context/StudentContext";
@@ -6,23 +6,11 @@ import { usePayments } from "@/context/PaymentContext";
 import { Skeleton } from "@chakra-ui/react";
 
 const HomePage = () => {
-  const [courses = [], setCourses] = useCourses();
-  const [students = [], setStudents] = useStudents();
-  const [paymentHistory = [], setPaymentHistory] = usePayments();
+  const { courses, loading: coursesLoading } = useCourses();
+  const { students, loading: studentsLoading } = useStudents();
+  const { paymentHistory, loading: paymentsLoading } = usePayments();
 
-  const [loading, setLoading] = useState(true); // NEW loading state
-
-  // Fetch data on first render
-  useEffect(() => {
-    const fetchData = async () => {
-      if (!courses.length) await setCourses();
-      if (!students.length) await setStudents();
-      if (!paymentHistory.length) await setPaymentHistory();
-      setLoading(false); // stop loading after fetch
-    };
-
-    fetchData();
-  }, []);
+  const isLoading = coursesLoading || studentsLoading || paymentsLoading;
 
   // Calculate total fees safely
   const totalAmountPaid = (paymentHistory || []).reduce(
@@ -31,15 +19,15 @@ const HomePage = () => {
   );
 
   // Get first 3 items for preview
-  const firstThreeCourses = courses.slice(0, 3);
-  const firstThreeStudents = students.slice(0, 3);
+  const firstThreeCourses = courses?.slice(0, 3) || [];
+  const firstThreeStudents = students?.slice(0, 3) || [];
 
   // Totals
-  const totalCourses = courses.length;
-  const totalStudents = students.length;
+  const totalCourses = courses?.length || 0;
+  const totalStudents = students?.length || 0;
 
   // Show loading skeletons if data is being fetched
-  if (loading) {
+  if (isLoading) {
     return (
       <div className="w-full max-w-7xl mx-auto p-6 bg-gray-50 min-h-screen flex flex-col gap-6">
         <Skeleton height="60px" width="60%" />
