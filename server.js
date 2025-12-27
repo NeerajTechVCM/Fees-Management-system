@@ -20,7 +20,7 @@ app.use(cookieParser());
 // app.use(cors());
 app.use(
     cors({
-      origin: "http://localhost:5173/",
+      origin: "https://fees-management-system-ph04.onrender.com/",
     
       credentials: true,
     })
