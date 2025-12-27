@@ -32,51 +32,53 @@ export default function CollectFees() {
     remarks: "",
   });
 
-  // 🔹 total paid by student from payments context
   const getTotalPaidByStudent = (stuId) => {
+    if (!stuId) return 0;
     return payments
-      .filter((p) => p.stuId === stuId)
+      .filter((p) => String(p.stuId) === String(stuId))
       .reduce((sum, p) => sum + Number(p.amountPaid || 0), 0);
   };
 
-  const handleSelectChange = (name, value) => {
-    // ---------- STUDENT ID SELECT ----------
-    if (name === "stuId") {
-      const selectedStudent = students.find(
-        (student) => student.stuId === value
-      );
-      if (!selectedStudent) return;
+  const handleStudentSelect = (value) => {
+    const stuId = String(value);
 
-      const studentCourse = selectedStudent.course;
-      const alreadyPaid = getTotalPaidByStudent(value);
+    const student = students.find(
+      (s) => String(s.stuId) === stuId
+    );
 
-      const selectedCourse = courses.find(
-        (course) => course.name === studentCourse
-      );
-
-      if (selectedCourse) {
-        const total = Number(selectedCourse.fees);
-        const remaining = total - alreadyPaid;
-
-        setFormData((prev) => ({
-          ...prev,
-          stuId: value,
-          course: studentCourse,
-          totalFees: total,
-          amountPaid: "",
-        }));
-
-        setRemainingFees(remaining > 0 ? remaining : 0);
-      }
+    // reset if invalid
+    if (!student) {
+      setFormData({
+        stuId: "",
+        course: "",
+        totalFees: "",
+        amountPaid: "",
+        paymentMethod: "",
+        remarks: "",
+      });
+      setRemainingFees(0);
+      return;
     }
 
-    // ---------- PAYMENT METHOD ----------
-    if (name === "paymentMethod") {
-      setFormData((prev) => ({
-        ...prev,
-        paymentMethod: value,
-      }));
-    }
+    const courseObj = courses.find(
+      (c) => c.name === student.course
+    );
+
+    if (!courseObj) return;
+
+    const totalFees = Number(courseObj.fees);
+    const alreadyPaid = getTotalPaidByStudent(stuId);
+    const remaining = totalFees - alreadyPaid;
+
+    setFormData((prev) => ({
+      ...prev,
+      stuId,
+      course: student.course,     // auto select
+      totalFees,                  // auto set
+      amountPaid: "",
+    }));
+
+    setRemainingFees(remaining > 0 ? remaining : 0);
   };
 
   const handleSubmit = async (e) => {
@@ -88,36 +90,26 @@ export default function CollectFees() {
     }
 
     if (!formData.amountPaid) {
-      toast.error("Please enter amount paid");
-      return;
-    }
-
-    if (remainingFees === 0) {
-      toast.error("Fees already fully paid");
+      toast.error("Please enter amount");
       return;
     }
 
     if (Number(formData.amountPaid) > remainingFees) {
-      toast.error(`Maximum payable amount is ₹${remainingFees}`);
+      toast.error(`Maximum payable ₹${remainingFees}`);
       return;
     }
 
-    const result = await fetch("/collectFees", {
+    const res = await fetch("/collectFees", {
       method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-      },
-      body: JSON.stringify(formData),
+      headers: { "Content-Type": "application/json" },
       credentials: "include",
+      body: JSON.stringify(formData),
     });
 
-    const data = await result.json();
-
-    if (data.success) {
-      toast.success(data.message);
-    } else {
-      toast.error(data.message);
-    }
+    const data = await res.json();
+    data.success
+      ? toast.success(data.message)
+      : toast.error(data.message);
 
     setFormData({
       stuId: "",
@@ -127,7 +119,6 @@ export default function CollectFees() {
       paymentMethod: "",
       remarks: "",
     });
-
     setRemainingFees(0);
   };
 
@@ -143,143 +134,107 @@ export default function CollectFees() {
 
             <form onSubmit={handleSubmit} className="space-y-6">
               <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                {/* Student Id */}
-                <div className="flex flex-col">
-                  <Label className="mb-2 text-gray-700 font-medium">
-                    Student Id
-                  </Label>
+                {/* Student ID */}
+                <div>
+                  <Label>Student Id</Label>
                   <Select
                     value={formData.stuId}
-                    onValueChange={(value) =>
-                      handleSelectChange("stuId", value)
-                    }
+                    onValueChange={handleStudentSelect}
                   >
-                    <SelectTrigger className="bg-white mt-2 w-full border border-gray-300 rounded-lg p-3 focus:ring-2 focus:ring-indigo-400">
+                    <SelectTrigger className="mt-2">
                       <SelectValue placeholder="Select Student Id" />
                     </SelectTrigger>
                     <SelectContent>
-                      {students.map((student) => (
+                      {students.map((s) => (
                         <SelectItem
-                          key={student._id}
-                          value={student.stuId}
+                          key={s._id}
+                          value={String(s.stuId)}
                         >
-                          {student.stuId}
+                          {s.stuId}
                         </SelectItem>
                       ))}
                     </SelectContent>
                   </Select>
                 </div>
 
-                {/* Course (AUTO / READONLY) */}
-                <div className="flex flex-col">
-                  <Label className="mb-2 text-gray-700 font-medium">
-                    Course
-                  </Label>
-                  <Select value={formData.course} disabled>
-                    <SelectTrigger className="bg-white mt-2 w-full border border-gray-300 rounded-lg p-3 focus:ring-2 focus:ring-indigo-400 opacity-80 cursor-not-allowed">
-                      <SelectValue placeholder="Course auto selected" />
+                {/* Course (AUTO, HIDDEN UNTIL ID) */}
+                <div>
+                  <Label>Course</Label>
+                  <Select
+                    value={formData.course}
+                    disabled
+                  >
+                    <SelectTrigger className="mt-2 opacity-80 cursor-not-allowed">
+                      <SelectValue placeholder="Auto selected" />
                     </SelectTrigger>
-                    <SelectContent>
-                      {courses.map((course) => (
-                        <SelectItem
-                          key={course.id}
-                          value={course.name}
-                        >
-                          {course.name}
-                        </SelectItem>
-                      ))}
-                    </SelectContent>
                   </Select>
                 </div>
 
-                {/* Total Fee */}
-                <div className="flex flex-col">
-                  <Label className="mb-2 text-gray-700 font-medium">
-                    Total Fee
-                  </Label>
+                {/* Total Fees (AUTO, HIDDEN UNTIL ID) */}
+                <div>
+                  <Label>Total Fee</Label>
                   <Input
-                    value={formData.totalFees}
                     readOnly
-                    className="bg-white border border-gray-300 rounded-lg p-3 focus:ring-2 focus:ring-indigo-400 mt-2"
+                    value={formData.totalFees}
+                    placeholder="Auto calculated"
+                    className="mt-2"
                   />
                 </div>
 
                 {/* Amount Paid */}
-                <div className="flex flex-col">
-                  <Label className="mb-2 text-gray-700 font-medium">
-                    Amount Paid
-                  </Label>
+                <div>
+                  <Label>Amount Paid</Label>
                   <Input
                     type="number"
-                    placeholder={
-                      remainingFees > 0
-                        ? `Max payable: ₹${remainingFees}`
-                        : "Fees already cleared"
-                    }
                     value={formData.amountPaid}
-                    disabled={remainingFees === 0}
+                    disabled={!formData.stuId || remainingFees === 0}
+                    placeholder={
+                      formData.stuId
+                        ? `Max ₹${remainingFees}`
+                        : "Select student first"
+                    }
                     onChange={(e) => {
-                      const val = e.target.value;
-
-                      if (val === "") {
-                        setFormData((p) => ({
-                          ...p,
-                          amountPaid: "",
-                        }));
+                      const val = Number(e.target.value);
+                      if (val > remainingFees) {
+                        toast.error(`Max ₹${remainingFees}`);
                         return;
                       }
-
-                      const num = Number(val);
-
-                      if (num <= 0) {
-                        toast.error("Amount must be greater than 0");
-                        return;
-                      }
-
-                      if (num > remainingFees) {
-                        toast.error(
-                          `Maximum payable amount is ₹${remainingFees}`
-                        );
-                        return;
-                      }
-
                       setFormData((p) => ({
                         ...p,
-                        amountPaid: num,
+                        amountPaid: e.target.value,
                       }));
                     }}
-                    className="bg-white border border-gray-300 rounded-lg p-3 focus:ring-2 focus:ring-indigo-400 mt-2"
+                    className="mt-2"
                   />
                 </div>
               </div>
 
               {/* Payment Method */}
-              <div className="flex flex-col">
-                <Label className="mb-2 text-gray-700 font-medium">
-                  Payment Method
-                </Label>
+              <div>
+                <Label>Payment Method</Label>
                 <Select
                   value={formData.paymentMethod}
-                  onValueChange={(value) =>
-                    handleSelectChange("paymentMethod", value)
+                  onValueChange={(v) =>
+                    setFormData((p) => ({
+                      ...p,
+                      paymentMethod: v,
+                    }))
                   }
                 >
-                  <SelectTrigger className="bg-white mt-2 w-full border border-gray-300 rounded-lg p-3 focus:ring-2 focus:ring-indigo-400">
+                  <SelectTrigger className="mt-2">
                     <SelectValue placeholder="Select Payment Method" />
                   </SelectTrigger>
                   <SelectContent>
                     <SelectItem value="cash">Cash</SelectItem>
                     <SelectItem value="card">Card</SelectItem>
-                    <SelectItem value="bank">Bank Transfer</SelectItem>
+                    <SelectItem value="bank">Bank</SelectItem>
                   </SelectContent>
                 </Select>
               </div>
 
               {/* Remarks */}
-              <div className="flex flex-col">
-                <Label className="mb-2 text-gray-700 font-medium">
-                  Remarks
-                </Label>
+              <div>
+                <Label>Remarks</Label>
                 <Textarea
                   value={formData.remarks}
                   onChange={(e) =>
@@ -288,14 +243,11 @@ export default function CollectFees() {
                       remarks: e.target.value,
                     }))
                   }
-                  className="bg-white border border-gray-300 rounded-lg p-3 focus:ring-2 focus:ring-indigo-400 mt-2"
+                  className="mt-2"
                 />
               </div>
 
-              <Button
-                type="submit"
-                className="w-full bg-indigo-600 text-white font-semibold py-3 rounded-lg hover:bg-indigo-700 transition duration-300 shadow-md hover:shadow-lg"
-              >
+              <Button className="w-full">
                 Submit Payment
               </Button>
             </form>
