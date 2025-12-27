@@ -89,7 +89,7 @@ return (
       <AvatarImage src={auth ? auth.users.profile : ""} />
       <AvatarFallback>CN</AvatarFallback>
     </Avatar>
-    <span className="font-semibold text-white truncate hidden md:inline">
+    <span className="font-semibold text-white truncate  md:inline">
       {auth ? auth.users.name : "Username"}
     </span>
   </div>
