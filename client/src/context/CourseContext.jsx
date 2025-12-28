@@ -34,4 +34,7 @@ export default function CourseProvider({ children }) {
   );
 }
 
-export const useCourses = () => useContext(CourseContext);
+
+
+
+export const useCourses=()=>useContext(CourseContext);

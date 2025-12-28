@@ -34,4 +34,7 @@ export default function StudentProvider({ children }) {
   );
 }
 
-export const useStudents = () => useContext(StudentContext);
+
+
+
+export const useStudents=()=>useContext(StudentContext);

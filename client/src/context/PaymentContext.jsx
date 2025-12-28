@@ -34,4 +34,7 @@ export default function PaymentProvider({ children }) {
   );
 }
 
-export const usePayments = () => useContext(PaymentContext);
+
+
+
+export const usePayments=()=>useContext(PaymentContext);

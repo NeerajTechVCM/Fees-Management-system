@@ -9,7 +9,7 @@ export default function Logout() {
     const handleLogout = async ()=>{
   
         
-          const result = await fetch("http://localhost:8080/logout", {
+          const result = await fetch("/logout", {
             method: "POST",
             headers: {
               "Content-Type": 'application/json'
