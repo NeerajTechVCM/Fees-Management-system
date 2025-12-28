@@ -9,11 +9,11 @@ import { useStudents } from "@/context/StudentContext";
 import { Navigate, useNavigate, useParams } from "react-router-dom";
 
 export default function EditStudent() {
-  const [courses, setCourses] = useCourses();
+  const {courses, setCourses} = useCourses();
 
   const { id } = useParams();
 
-  const [students, setStudents] = useStudents();
+  const {students, setStudents} = useStudents();
   const [selectStudents, setSelectStudents] = useState(null);
 const navigate= useNavigate();
 

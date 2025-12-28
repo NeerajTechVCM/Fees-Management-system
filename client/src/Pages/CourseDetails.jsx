@@ -9,9 +9,9 @@ import { Link, useParams } from 'react-router-dom';
 
 export default function CourseDetails() {
   const { id } = useParams();
-  const [courses, setCourses] = useCourses();
+  const {courses, setCourses} = useCourses();
   const [selectCourse, setSelectCourse] = useState(null);
-  const [students, setStudents] = useStudents();
+  const {students, setStudents} = useStudents();
   const [selectStudents, setSelectStudents] = useState([]);
 
   useEffect(() => {

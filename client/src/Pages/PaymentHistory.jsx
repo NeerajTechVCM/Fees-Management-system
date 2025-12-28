@@ -4,7 +4,7 @@ import Payment from "@/components/Payment";
 import { usePayments } from "@/context/PaymentContext";
 
 const PaymentHistory = () => {
-const [paymentHistory, setPaymentHistory] = usePayments();
+const {paymentHistory, setPaymentHistory} = usePayments();
 
 
 

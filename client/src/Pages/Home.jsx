@@ -1,4 +1,4 @@
-import React, { useEffect } from "react";
+import React from "react";
 import { User, BookOpen, Users, IndianRupeeIcon, IndianRupee } from "lucide-react";
 import { useCourses } from "@/context/CourseContext";
 import { useStudents } from "@/context/StudentContext";
@@ -6,34 +6,28 @@ import { usePayments } from "@/context/PaymentContext";
 import { Skeleton } from "@chakra-ui/react";
 
 const HomePage = () => {
-const [courses = [], setCourses] = useCourses();
-const [students = [], setStudents] = useStudents();
-const [paymentHistory = [], setPaymentHistory] = usePayments();
+  const { courses, loading: coursesLoading } = useCourses();
+  const { students, loading: studentsLoading } = useStudents();
+  const { paymentHistory, loading: paymentsLoading } = usePayments();
 
-// Ensure data is fetched on first render
-useEffect(() => {
-  if (!courses.length) setCourses();
-  if (!students.length) setStudents();
-  if (!paymentHistory.length) setPaymentHistory();
-}, []);
+  const isLoading = coursesLoading || studentsLoading || paymentsLoading;
 
-// Safely calculate total fees
-const totalAmountPaid = (paymentHistory || []).reduce(
-  (acc, fee) => acc + Number(fee.amountPaid),
-  0
-);
+  // Calculate total fees safely
+  const totalAmountPaid = (paymentHistory || []).reduce(
+    (acc, fee) => acc + Number(fee.amountPaid),
+    0
+  );
 
-// Get first 3 items for preview
-const firstThreeCourses = courses.slice(0, 3);
-const firstThreeStudents = students.slice(0, 3);
+  // Get first 3 items for preview
+  const firstThreeCourses = courses?.slice(0, 3) || [];
+  const firstThreeStudents = students?.slice(0, 3) || [];
 
-// Totals
-const totalCourses = courses.length;
-const totalStudents = students.length;
+  // Totals
+  const totalCourses = courses?.length || 0;
+  const totalStudents = students?.length || 0;
 
-
-  // Show loading skeletons if data is not ready
-  if (!courses.length && !students.length && !paymentHistory.length) {
+  // Show loading skeletons if data is being fetched
+  if (isLoading) {
     return (
       <div className="w-full max-w-7xl mx-auto p-6 bg-gray-50 min-h-screen flex flex-col gap-6">
         <Skeleton height="60px" width="60%" />
@@ -99,16 +93,20 @@ const totalStudents = students.length;
           Some Courses
         </h2>
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
-          {firstThreeCourses.map((course) => (
-            <div
-              key={course.id}
-              className="bg-white p-6 rounded-2xl shadow-md transform transition duration-500 hover:-translate-y-2 hover:shadow-lg hover:scale-105 text-gray-800"
-            >
-              <h3 className="text-2xl font-semibold mb-2 text-indigo-700">{course.name}</h3>
-              <p className="text-gray-700 mt-2">{course.description}</p>
-              <p className="text-gray-500 mt-1 italic">Duration: {course.duration}</p>
-            </div>
-          ))}
+          {firstThreeCourses.length ? (
+            firstThreeCourses.map((course) => (
+              <div
+                key={course.id}
+                className="bg-white p-6 rounded-2xl shadow-md transform transition duration-500 hover:-translate-y-2 hover:shadow-lg hover:scale-105 text-gray-800"
+              >
+                <h3 className="text-2xl font-semibold mb-2 text-indigo-700">{course.name}</h3>
+                <p className="text-gray-700 mt-2">{course.description}</p>
+                <p className="text-gray-500 mt-1 italic">Duration: {course.duration}</p>
+              </div>
+            ))
+          ) : (
+            <p className="text-gray-500 italic">No courses added yet.</p>
+          )}
         </div>
       </div>
 
@@ -118,17 +116,21 @@ const totalStudents = students.length;
           Some Students
         </h2>
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
-          {firstThreeStudents.map((student) => (
-            <div
-              key={student._id}
-              className="bg-white p-6 rounded-2xl shadow-md transform transition duration-500 hover:-translate-y-2 hover:shadow-lg hover:scale-105 text-gray-800"
-            >
-              <h3 className="text-2xl font-semibold mb-2 text-green-600">{student.fullName}</h3>
-              <p className="text-gray-700 mt-1">
-                Enrolled Courses: <span className="font-medium">{student.courseName}</span>
-              </p>
-            </div>
-          ))}
+          {firstThreeStudents.length ? (
+            firstThreeStudents.map((student) => (
+              <div
+                key={student._id}
+                className="bg-white p-6 rounded-2xl shadow-md transform transition duration-500 hover:-translate-y-2 hover:shadow-lg hover:scale-105 text-gray-800"
+              >
+                <h3 className="text-2xl font-semibold mb-2 text-green-600">{student.fullName}</h3>
+                <p className="text-gray-700 mt-1">
+                  Enrolled Courses: <span className="font-medium">{student.courseName || "None"}</span>
+                </p>
+              </div>
+            ))
+          ) : (
+            <p className="text-gray-500 italic">No students enrolled yet.</p>
+          )}
         </div>
       </div>
     </div>

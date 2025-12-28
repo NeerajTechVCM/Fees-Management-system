@@ -11,7 +11,7 @@ import { useNavigate, useParams } from "react-router-dom";
 
 export default function EditCourse() {
   const { id } = useParams();
-  const [courses, setCourses] = useCourses();
+  const {courses, setCourses} = useCourses();
   const [selectCourse, setSelectCourse] = useState(null);
 
    

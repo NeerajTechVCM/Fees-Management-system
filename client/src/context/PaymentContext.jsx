@@ -1,38 +1,37 @@
-import React, { createContext, useContext, useEffect, useState } from 'react'
+import React, { createContext, useContext, useEffect, useState } from "react";
 
- const PaymentContext=createContext();
- 
+const PaymentContext = createContext();
 
-export default function PaymentProvider({children}) {
-const [paymentHistory, setPaymentHistory] = useState([]);
+export default function PaymentProvider({ children }) {
+  const [paymentHistory, setPaymentHistory] = useState([]);
+  const [loading, setLoading] = useState(true);
 
-  useEffect(() => {
-    const fetchFees = async () => {
+  const fetchPayments = async () => {
+    setLoading(true);
+    try {
       const result = await fetch("/feesHistory", {
         method: "GET",
-        headers: {
-          "Content-Type": 'application/json',
-        },
-        credentials: 'include',
+        headers: { "Content-Type": "application/json" },
+        credentials: "include",
       });
-
       const data = await result.json();
-      
-      if (data.feesHistory) {
-        setPaymentHistory(data.feesHistory);
-      }
-    };
+      if (data.feesHistory) setPaymentHistory(data.feesHistory);
+    } catch (err) {
+      console.error("Error fetching payments:", err);
+    } finally {
+      setLoading(false);
+    }
+  };
 
-    fetchFees();
+  useEffect(() => {
+    fetchPayments();
   }, []);
+
   return (
-   <PaymentContext.Provider value={[paymentHistory,setPaymentHistory]}>
-    {children}
-   </PaymentContext.Provider>
-  )
+    <PaymentContext.Provider value={{ paymentHistory, setPaymentHistory, loading, fetchPayments }}>
+      {children}
+    </PaymentContext.Provider>
+  );
 }
 
-
-
-
-export const usePayments=()=>useContext(PaymentContext);
+export const usePayments = () => useContext(PaymentContext);

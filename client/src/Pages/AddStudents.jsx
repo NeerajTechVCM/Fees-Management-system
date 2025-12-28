@@ -7,7 +7,7 @@ import { useCourses } from "@/context/CourseContext";
 import toast, { Toaster } from "react-hot-toast";
 
 export default function AddStudent() {
-  const [courses, setCourses] = useCourses();
+  const {courses, setCourses} = useCourses();
 
 
   const [stuFormData, setStuFormData] = useState({

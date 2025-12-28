@@ -7,9 +7,9 @@ import { usePayments } from "@/context/PaymentContext";
 const StudentDetails = () => {
   const { id } = useParams();
 
-  const [students, setStudents] = useStudents();
+  const {students, setStudents} = useStudents();
   const [selectStudents, setSelectStudents] = useState(null);
-  const [paymentHistory, setPaymentHistory] = usePayments();
+  const {paymentHistory, setPaymentHistory} = usePayments();
   const [selectPaymentHistory, setSelectPaymentHistory] = useState([]);
 
   useEffect(() => {
